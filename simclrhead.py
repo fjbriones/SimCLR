@@ -87,9 +87,20 @@ class SimCLRHead(object):
 				hidden = self.model(images)
 				logits = self.head(hidden)
 
+				_, predicted = logits.topk(1, 1, True, True)
+				predicted = predicted.t().squeeze()
+
 				top1, top5 = accuracy(logits, labels, topk=(1,5))
 				top1_accuracy += top1[0]
 				top5_accuracy += top5[0]
+
+				if counter % self.args.log_every_n_steps == 0:
+					grid_1 = torchvision.utils.make_grid(images[:10])
+					self.writer.add_image('data', grid_1, global_step=n_iter)
+					self.writer.add_text('labels', str(labels[:10].cpu().numpy()), global_step=n_iter)
+					self.writer.add_text('predictions', str(predicted[:10].cpu().numpy()), global_step=n_iter)
+
+				
 
 			top1_accuracy /= (counter + 1)
 			top5_accuracy /= (counter + 1)
