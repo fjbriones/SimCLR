@@ -91,9 +91,6 @@ class SimCLRHead(object):
 				top1_accuracy += top1[0]
 				top5_accuracy += top5[0]
 
-				top1_accuracy /= (counter + 1)
-				top5_accuracy /= (counter + 1)
-
 			top1_accuracy /= (counter + 1)
 			top5_accuracy /= (counter + 1)
 			logging.debug(f"Validation Epoch: {epoch_counter}\tTop1_accuracy: {top1_accuracy}\tTop5 accuracy: {top5_accuracy}")
@@ -106,7 +103,12 @@ class SimCLRHead(object):
 					'state_dict': self.model.state_dict(),
 					'head_state_dict': self.head.state_dict(),
 					'optimizer': self.optimizer.state_dict()
-					}, is_best=False, filename=os.path.join(self.writer.log_dir, checkpoint_name))
+					}, is_best=False, filename=os.path.join(self.writer.log_dir, checkpoint_name), part="head")
+
+				max_top1_accuracy = top1_accuracy
+				max_top5_accuracy = top5_accuracy
+
+				logging.debug(f"Model checkpoint and metadata has been saved at {self.writer.log_dir}.")
 
 			# print(f"Epoch {epoch}\tTop1 Train accuracy {top1_train_accuracy.item()}\tTop1 Test accuracy: {top1_accuracy.item()}\tTop5 test acc: {top5_accuracy.item()}")
 
