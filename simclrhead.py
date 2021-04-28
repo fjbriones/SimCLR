@@ -101,7 +101,7 @@ class SimCLRHead(object):
 			checkpoint_name = 'checkpoint_head_{:04d}.pth.tar'.format(epoch_counter)
 			if max_top1_accuracy < top1_accuracy and max_top5_accuracy < top5_accuracy:
 				save_checkpoint({
-					'epoch': self.args.epoch,
+					'epoch': epoch_counter,
 					'arch': self.args.arch,
 					'state_dict': self.model.state_dict(),
 					'head_state_dict': self.head.state_dict(),
