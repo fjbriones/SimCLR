@@ -9,6 +9,8 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from utils import save_config_file, accuracy, save_checkpoint
 
+import torchvision
+
 torch.manual_seed(0)
 
 
@@ -29,6 +31,7 @@ class SimCLR(object):
         labels = (labels.unsqueeze(0) == labels.unsqueeze(1)).float()
         labels = labels.to(self.args.device)
 
+
         features = F.normalize(features, dim=1)
 
         similarity_matrix = torch.matmul(features, features.T)
@@ -40,13 +43,20 @@ class SimCLR(object):
         mask = torch.eye(labels.shape[0], dtype=torch.bool).to(self.args.device)
         labels = labels[~mask].view(labels.shape[0], -1)
         similarity_matrix = similarity_matrix[~mask].view(similarity_matrix.shape[0], -1)
+        # print(labels.shape)
+        # print(similarity_matrix.shape)
+
         # assert similarity_matrix.shape == labels.shape
 
         # select and combine multiple positives
         positives = similarity_matrix[labels.bool()].view(labels.shape[0], -1)
 
+        # print(positives)
+
         # select only the negatives the negatives
         negatives = similarity_matrix[~labels.bool()].view(similarity_matrix.shape[0], -1)
+
+        # print(negatives.shape)
 
         logits = torch.cat([positives, negatives], dim=1)
         labels = torch.zeros(logits.shape[0], dtype=torch.long).to(self.args.device)
@@ -63,7 +73,7 @@ class SimCLR(object):
 
         n_iter = 0
         logging.info(f"Start SimCLR training for {self.args.epochs} epochs.")
-        logging.info(f"Training with gpu: {self.args.disable_cuda}.")
+        logging.info(f"Training with gpu: {not self.args.disable_cuda}.")
 
         for epoch_counter in range(self.args.epochs):
             for images, _ in tqdm(train_loader):
@@ -76,6 +86,9 @@ class SimCLR(object):
                     logits, labels = self.info_nce_loss(features)
                     loss = self.criterion(logits, labels)
 
+                # print(logits.shape)
+                # print(labels.shape)
+
                 self.optimizer.zero_grad()
 
                 scaler.scale(loss).backward()
@@ -84,12 +97,22 @@ class SimCLR(object):
                 scaler.update()
 
                 if n_iter % self.args.log_every_n_steps == 0:
+                    # print(labels)
+                    # print(logits)
+                    # print("Writing")
                     top1, top5 = accuracy(logits, labels, topk=(1, 5))
                     self.writer.add_scalar('loss', loss, global_step=n_iter)
                     self.writer.add_scalar('acc/top1', top1[0], global_step=n_iter)
                     self.writer.add_scalar('acc/top5', top5[0], global_step=n_iter)
                     self.writer.add_scalar('learning_rate', self.scheduler.get_lr()[0], global_step=n_iter)
 
+                    grid_1 = torchvision.utils.make_grid(images[:4])
+                    self.writer.add_image('data_1', grid_1, global_step=n_iter)
+                    self.writer.add_text('data_1', str(labels[:4].cpu().numpy()), global_step=n_iter)
+
+                    grid_2 = torchvision.utils.make_grid(images[self.args.batch_size:self.args.batch_size+4])
+                    self.writer.add_image('data 2', grid_2, global_step=n_iter)
+                    self.writer.add_text('data_2', str(labels[self.args.batch_size:self.args.batch_size+4].cpu().numpy()), global_step=n_iter)
                 n_iter += 1
 
             # warmup for the first 10 epochs
