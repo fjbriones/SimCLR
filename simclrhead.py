@@ -84,7 +84,7 @@ class SimCLRHead(object):
 				images = x_batch.to(self.args.device)
 				labels = y_batch.to(self.args.device)
 
-				hidden = self.model(x_batch)
+				hidden = self.model(images)
 				logits = self.head(hidden)
 
 				top1, top5 = accuracy(logits, labels, topk=(1,5))

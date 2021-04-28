@@ -119,7 +119,7 @@ def main():
     with torch.cuda.device(args.gpu_index):
         if not args.head_only:
             simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, args=args)
-            simclr.train(train_loader)
+            model = simclr.train(train_loader)
         model.eval()
         headsimclr = SimCLRHead(model=model, args=args)
         headsimclr.train(train_head_loader, test_head_loader)
