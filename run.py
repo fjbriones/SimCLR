@@ -3,7 +3,9 @@ import torch
 import torch.backends.cudnn as cudnn
 from torchvision import models
 from data_aug.contrastive_learning_dataset import ContrastiveLearningDataset
+from data_aug.head_dataset import HeadDataset
 from models.resnet_simclr import ResNetSimCLR
+from simclrhead import SimCLRHead
 from simclr import SimCLR
 
 import imgaug
@@ -18,7 +20,7 @@ model_names = sorted(name for name in models.__dict__
 parser = argparse.ArgumentParser(description='PyTorch SimCLR')
 parser.add_argument('-data', metavar='DIR', default='./datasets',
                     help='path to dataset')
-parser.add_argument('-dataset-name', default='stl10',
+parser.add_argument('-dataset-name', default='mnist',
                     help='dataset name', choices=['stl10', 'cifar10', 'mnist'])
 parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
                     choices=model_names,
@@ -55,6 +57,8 @@ parser.add_argument('--temperature', default=0.07, type=float,
 parser.add_argument('--n-views', default=2, type=int, metavar='N',
                     help='Number of views for contrastive learning training.')
 parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
+parser.add_argument('--head-only', action='store_true', help="Train only head for classification task")
+parser.add_argument('--model-path', default=None, type=str, help="Model weights for resnet")
 
 def worker_init_fn(worker_id):
     imgaug.seed(np.random.get_state()[1][0] + worker_id)
@@ -88,15 +92,35 @@ def main():
 
     model = ResNetSimCLR(base_model=args.arch, out_dim=args.out_dim, in_channels=in_channels)
 
+    if args.model_path is not None:
+        torch.load(args.model_path, map_location=args.device)
+
     optimizer = torch.optim.Adam(model.parameters(), args.lr, weight_decay=args.weight_decay)
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_loader), eta_min=0,
                                                            last_epoch=-1)
 
+    head_dataset = HeadDataset(args.data)
+    train_head_dataset = head_dataset.get_dataset(args.dataset_name, train=True, split="train")
+    test_head_dataset = head_dataset.get_dataset(args.dataset_name, train=False, split="test")
+
+    args.num_classes = head_dataset.get_num_classes(args.dataset_name)
+
+    train_head_loader = torch.utils.data.DataLoader(
+        train_head_dataset, batch_size=args.batch_size, shuffle=True,
+        num_workers=args.workers, pin_memory=True, drop_last=True)
+
+    test_head_loader = torch.utils.data.DataLoader(
+        test_head_dataset, batch_size=args.batch_size, shuffle=True,
+        num_workers=args.workers, pin_memory=True, drop_last=True)
+
     #  It’s a no-op if the 'gpu_index' argument is a negative integer or None.
     with torch.cuda.device(args.gpu_index):
-        simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, args=args)
-        simclr.train(train_loader)
+        if not args.head_only:
+            simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, args=args)
+            simclr.train(train_loader)
+        headsimclr = SimCLRHead(model=model, args=args)
+        headsimclr.train(train_head_loader, test_head_loader)
 
 
 if __name__ == "__main__":
