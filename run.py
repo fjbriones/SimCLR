@@ -93,7 +93,8 @@ def main():
     model = ResNetSimCLR(base_model=args.arch, out_dim=args.out_dim, in_channels=in_channels)
 
     if args.model_path is not None:
-        torch.load(args.model_path, map_location=args.device)
+        checkpoint = torch.load(args.model_path, map_location=args.device)
+        model.load_state_dict(checkpoint['state_dict'])
 
     optimizer = torch.optim.Adam(model.parameters(), args.lr, weight_decay=args.weight_decay)
 
