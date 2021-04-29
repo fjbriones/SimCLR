@@ -112,12 +112,12 @@ class SimCLR(object):
                     self.writer.add_scalar('learning_rate', self.scheduler.get_lr()[0], global_step=n_iter)
 
                     grid_1 = torchvision.utils.make_grid(images[:4])
-                    self.writer.add_image('data_1', grid_1, global_step=n_iter)
-                    self.writer.add_text('data_1', str(labels[:4].cpu().numpy()), global_step=n_iter)
+                    # self.writer.add_image('data_1', grid_1, global_step=n_iter)
+                    # self.writer.add_text('data_1', str(labels[:4].cpu().numpy()), global_step=n_iter)
 
                     grid_2 = torchvision.utils.make_grid(images[self.args.batch_size:self.args.batch_size+4])
-                    self.writer.add_image('data 2', grid_2, global_step=n_iter)
-                    self.writer.add_text('data_2', str(labels[self.args.batch_size:self.args.batch_size+4].cpu().numpy()), global_step=n_iter)
+                    # self.writer.add_image('data 2', grid_2, global_step=n_iter)
+                    # self.writer.add_text('data_2', str(labels[self.args.batch_size:self.args.batch_size+4].cpu().numpy()), global_step=n_iter)
                 n_iter += 1
 
             # warmup for the first 10 epochs
@@ -137,6 +137,9 @@ class SimCLR(object):
                 logging.info(f"Model checkpoint and metadata has been saved at {self.writer.log_dir}.")
 
                 best_model_state_dict = deepcopy(self.model.state_dict())
+
+                top_acc = top1[0]
+                top_loss = loss
 
         logging.info("Training has finished.")
         # save model checkpoints

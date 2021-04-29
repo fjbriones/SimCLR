@@ -95,10 +95,10 @@ class SimCLRHead(object):
 				top5_accuracy += top5[0]
 
 				if counter % self.args.log_every_n_steps == 0:
-					grid_1 = torchvision.utils.make_grid(images[:10])
+					grid_1 = torchvision.utils.make_grid(images[:8])
 					self.writer.add_image('data', grid_1, global_step=n_iter)
-					self.writer.add_text('labels', str(labels[:10].cpu().numpy()), global_step=n_iter)
-					self.writer.add_text('predictions', str(predicted[:10].cpu().numpy()), global_step=n_iter)
+					self.writer.add_text('labels', str(labels[:8].cpu().numpy()), global_step=n_iter)
+					self.writer.add_text('predictions', str(predicted[:8].cpu().numpy()), global_step=n_iter)
 
 				
 
