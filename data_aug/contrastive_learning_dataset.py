@@ -14,24 +14,24 @@ class ContrastiveLearningDataset:
     def get_simclr_pipeline_transform(size, s=1, channels=3):
         """Return a set of data augmentation transformations as described in the SimCLR paper."""
         #Original
-        # color_jitter = transforms.ColorJitter(0.8 * s, 0.8 * s, 0.8 * s, 0.2 * s)
-        # data_transforms = transforms.Compose([transforms.RandomResizedCrop(size=size),
-        #                                       # transforms.RandomHorizontalFlip(),
-        #                                       transforms.RandomApply([color_jitter], p=0.8),
-        #                                       transforms.RandomGrayscale(p=0.2),
-        #                                       GaussianBlur(kernel_size=int(0.1 * size), channels=channels),
-        #                                       transforms.ToTensor()])
-
-        data_transforms = transforms.Compose([iaa.Sequential([iaa.SomeOf((1, 5), 
-                                              [iaa.LinearContrast((0.5, 1.0)),
-                                              iaa.GaussianBlur((0.5, 1.5)),
-                                              iaa.Crop(percent=((0, 0.4),(0, 0),(0, 0.4),(0, 0.0)), keep_size=True),
-                                              iaa.Crop(percent=((0, 0.0),(0, 0.02),(0, 0),(0, 0.02)), keep_size=True),
-                                              iaa.Sharpen(alpha=(0.0, 0.5), lightness=(0.0, 0.5)),
-                                              iaa.PiecewiseAffine(scale=(0.02, 0.03), mode='edge'),
-                                              iaa.PerspectiveTransform(scale=(0.01, 0.02))],
-                                              random_order=True)]).augment_image,
+        color_jitter = transforms.ColorJitter(0.8 * s, 0.8 * s, 0.8 * s, 0.2 * s)
+        data_transforms = transforms.Compose([transforms.RandomResizedCrop(size=size),
+                                              # transforms.RandomHorizontalFlip(),
+                                              transforms.RandomApply([color_jitter], p=0.8),
+                                              transforms.RandomGrayscale(p=0.2),
+                                              GaussianBlur(kernel_size=int(0.1 * size), channels=channels),
                                               transforms.ToTensor()])
+
+        # data_transforms = transforms.Compose([iaa.Sequential([iaa.SomeOf((1, 5), 
+        #                                       [iaa.LinearContrast((0.5, 1.0)),
+        #                                       iaa.GaussianBlur((0.5, 1.5)),
+        #                                       iaa.Crop(percent=((0, 0.4),(0, 0),(0, 0.4),(0, 0.0)), keep_size=True),
+        #                                       iaa.Crop(percent=((0, 0.0),(0, 0.02),(0, 0),(0, 0.02)), keep_size=True),
+        #                                       iaa.Sharpen(alpha=(0.0, 0.5), lightness=(0.0, 0.5)),
+        #                                       iaa.PiecewiseAffine(scale=(0.02, 0.03), mode='edge'),
+        #                                       iaa.PerspectiveTransform(scale=(0.01, 0.02))],
+        #                                       random_order=True)]).augment_image,
+        #                                       transforms.ToTensor()])
 
         return data_transforms
 

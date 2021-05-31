@@ -7,6 +7,7 @@ from data_aug.head_dataset import HeadDataset
 from models.resnet_simclr import ResNetSimCLR
 from simclrhead import SimCLRHead
 from simclr import SimCLR
+from tsne import TSNE_project
 
 import imgaug
 import numpy as np
@@ -59,6 +60,7 @@ parser.add_argument('--n-views', default=2, type=int, metavar='N',
 parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
 parser.add_argument('--head-only', action='store_true', help="Train only head for classification task")
 parser.add_argument('--model-path', default=None, type=str, help="Model weights for resnet")
+parser.add_argument('--tsne-only', action='store_true', help="Plot tsne only")
 
 def worker_init_fn(worker_id):
     imgaug.seed(np.random.get_state()[1][0] + worker_id)
@@ -117,12 +119,17 @@ def main():
 
     #  It’s a no-op if the 'gpu_index' argument is a negative integer or None.
     with torch.cuda.device(args.gpu_index):
-        if not args.head_only:
+        if not (args.head_only or args.tsne_only):
             simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, args=args)
             model = simclr.train(train_loader)
         model.eval()
-        headsimclr = SimCLRHead(model=model, args=args)
-        headsimclr.train(train_head_loader, test_head_loader)
+        if not args.tsne_only:
+            headsimclr = SimCLRHead(model=model, args=args)
+            headsimclr.train(train_head_loader, test_head_loader)
+        
+        tsne_plot = TSNE_project(model, test_head_loader, args)
+
+
 
 
 if __name__ == "__main__":
